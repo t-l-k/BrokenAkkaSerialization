@@ -11,13 +11,13 @@ namespace NetFxBrokenAkkaSerialization
     using Akka.Event;
 
     [TestClass]
-    public class NetFxTest : TestKit
+    public class NetFxTests : TestKit
     {
-        static NetFxTest()
+        static NetFxTests()
         {
-            DiagnosticsConfig = ConfigurationFactory.ParseString(@"       
-akka { 
-  stdout-logger-class = ""NetCoreBrokenAkkaSerialization.UnitTest1+AkkaTestDiagnosticsLogger, NetCoreBrokenAkkaSerialization""
+            DiagnosticsConfig = ConfigurationFactory.ParseString(@"
+akka {
+  stdout-logger-class = ""NetCoreBrokenAkkaSerialization.NetFxTests+AkkaTestDiagnosticsLogger, NetCoreBrokenAkkaSerialization""
   log-config-on-start = true
   actor {
     serializers {
@@ -25,7 +25,26 @@ akka {
     }
     serialization-bindings {
       ""System.Object"" = hyperion
-      # ""Quartz.CronExpression"" = hyperion
+    }
+    serialization-settings.hyperion.cross-platform-package-name-overrides = {
+      netfx = [
+        {
+          fingerprint = ""System.Private.CoreLib,%core%"",
+          rename-from = ""System.Private.CoreLib,%core%"",
+          rename-to = ""mscorlib,%core%""
+       }]
+      netcore = [
+        {
+          fingerprint = ""mscorlib,%core%"",
+          rename-from = ""mscorlib,%core%"",
+          rename-to = ""System.Private.CoreLib,%core%""
+        }]
+      net = [
+        {
+          fingerprint = ""mscorlib,%core%"",
+          rename-from = ""mscorlib,%core%"",
+          rename-to = ""System.Private.CoreLib,%core%""
+        }]
     }
   }
 }")
@@ -35,7 +54,7 @@ akka {
 
         public static Config DiagnosticsConfig { get; }
 
-        public NetFxTest() : base(DiagnosticsConfig)
+        public NetFxTests() : base(DiagnosticsConfig)
         {
         }
 
@@ -58,7 +77,7 @@ akka {
             var example = new CronExpression("0 0 7 ? * MON-SUN");
             Serializer serializer = serialization.FindSerializerFor(example);
 
-            var file = new FileInfo(Path.Combine(Path.GetTempPath(), "fromnetfx.bin"));
+            var file = new FileInfo(Path.Combine(Path.GetTempPath(), "akkanetfx.bin"));
             File.WriteAllBytes(file.FullName, serializer.ToBinary(example));
             Assert.AreEqual(true, file.Exists);
         }
